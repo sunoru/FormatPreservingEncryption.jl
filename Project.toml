@@ -1,10 +1,13 @@
 name = "FormatPreservingEncryption"
 uuid = "de8196bb-6a94-4c0a-a598-faacd7905719"
-authors = ["スノル <s@sunoru.com> and contributors"]
+authors = ["Sunoru <s@sunoru.com>"]
 version = "0.1.0"
 
+[deps]
+AESNI = "99fbed13-29b3-4502-a852-adc41241e91d"
+
 [compat]
-julia = "1"
+julia = "1.8"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
