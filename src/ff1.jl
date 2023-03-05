@@ -1,3 +1,6 @@
+"""
+    FF1(; key_size=128, key, radix, tweak="")
+"""
 struct FF1{T} <: AbstractFPEContext{T}
     aes_key::T
     radix::UInt32
@@ -7,6 +10,7 @@ end
 function FF1(key_size, key, radix, tweak)
     @assert 2 ≤ radix ≤ 2^16 "radix must be between 2 and 2^16"
     aes_key = get_block_cipher(key_size, key)
+    tweak = Vector{UInt8}(collect(tweak))
     FF1{typeof(aes_key)}(aes_key, radix, tweak)
 end
 FF1(; key_size=128, key, radix, tweak="") =
@@ -82,37 +86,21 @@ macro _ff1_impl(ctx, input, is_encrypt)
             # 6.vi
             c = mod(
                 num_in_base($(is_encrypt ? :A : :B), radix) +
-                $(is_encrypt ? :y : :(-y)
-            ), powrm)
-            # 6.vii & 6.viii
+                $(is_encrypt ? :y : :(-y)),
+                powrm
+            )
+            # 6.vii, 6.viii & 6.ix
             A, B = B, A
-            # 6.vii
             str_in_base!($(is_encrypt ? :B : :A), c, radix)
         end
-        [A..., B...]
+        out
     end
 end
 
-"""
-    encrypt(ctx::FF1, plain::AbstractArray{<:Integer})
-
-Encrypt `plain` using `ctx`. `plain` must be an array of integers in the range
-`0:ctx.radix-1`. The result is an array of integers in the same range.
-
-Ref: Algorithm 7, Section 5.1, NIST SP 800-38G
-"""
 function AESNI.encrypt(ctx::FF1, plain::AbstractArray{<:Integer})
     @_ff1_impl(ctx, plain, true)
 end
 
-"""
-    decrypt(ctx::FF1, cipher::AbstractArray{<:Integer})
-
-Decrypt `cipher` using `ctx`. `cipher` must be an array of integers in the range
-`0:ctx.radix-1`. The result is an array of integers in the same range.
-
-Ref: Algorithm 7, Section 5.1, NIST SP 800-38G
-"""
 function AESNI.decrypt(ctx::FF1, cipher::AbstractArray{<:Integer})
     @_ff1_impl(ctx, cipher, false)
 end

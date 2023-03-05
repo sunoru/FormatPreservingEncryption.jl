@@ -1,6 +1,3 @@
-using Test
-using FormatPreservingEncryption
-
 @testset "FF1" begin
     # https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Standards-and-Guidelines/documents/examples/FF1samples.pdf
     key128 = bytes"2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C"
