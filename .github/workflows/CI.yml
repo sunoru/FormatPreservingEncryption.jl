@@ -29,6 +29,7 @@ jobs:
       - uses: julia-actions/cache@v1
       - name: Check out AESNI.jl
         run: julia --project -e 'using Pkg; Pkg.develop(url="https://github.com/sunoru/AESNI.jl")'
+        shell: bash
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
