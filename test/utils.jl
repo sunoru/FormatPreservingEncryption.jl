@@ -20,6 +20,6 @@ macro test_cipher(type, key_size, key, radix, tweak, plain, cipher = nothing)
             @test encrypted == cipher
             cipher
         end
-        # @test decrypt(ctx, cipher) == plain
+        @test decrypt(ctx, cipher) == plain
     end |> esc
 end
