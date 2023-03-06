@@ -32,7 +32,7 @@ end
 # Big endian
 be_bytes(x::BigInt, len=cld(Base.GMP.MPZ.sizeinbase(n, 2), 8)) = to_bytes(x, len, bigendian=true)
 function be_bytes(x::Core.BuiltinInts)
-    bytes = AESNI.unsafe_reinterpret_convert(UInt8, x, Val(sizeof(x)))
+    bytes = AESNI.unsafe_reinterpret_convert(UInt8, x, sizeof(x))
     @static if IS_BIG_ENDIAN
         bytes
     else
@@ -41,7 +41,7 @@ function be_bytes(x::Core.BuiltinInts)
 end
 le_bytes(x::BigInt, len=cld(Base.GMP.MPZ.sizeinbase(n, 2), 8)) = to_bytes(x, len, bigendian=false)
 function le_bytes(x::Core.BuiltinInts)
-    bytes = AESNI.unsafe_reinterpret_convert(UInt8, x, Val(sizeof(x)))
+    bytes = AESNI.unsafe_reinterpret_convert(UInt8, x, sizeof(x))
     @static if IS_BIG_ENDIAN
         reverse(bytes)
     else
@@ -51,8 +51,9 @@ end
 
 function prf(aes_key, X::AbstractArray{UInt8}, y::UInt128)
     m = length(X) ÷ 16
+    X128 = reinterpret(UInt128, X)
     @inbounds for i in 1:m
-        y = encrypt(aes_key, y ⊻ to_uint128(X[(i-1)*16+1:i*16]))
+        y = encrypt(aes_key, y ⊻ X128[i])
     end
     y
 end

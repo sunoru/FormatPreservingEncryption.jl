@@ -1,5 +1,5 @@
 """
-    FF3(; key_size=128, key::ByteSequence, radix, tweak="")
+    FF3(; key_size=128, key::ByteSequence, radix, tweak)
 """
 struct FF3{T} <: AbstractFPEContext{T}
     aes_key::T
@@ -9,12 +9,10 @@ end
 
 function FF3(key_size, key::ByteSequence, radix, tweak)
     @assert 2 ≤ radix ≤ 2^16 "radix must be between 2 and 2^16"
-    key = AESNI.pad_or_trunc(key, key_size >> 3) |> reverse
-    aes_key = get_block_cipher(key_size, key)
-    tweak_bytes = AESNI.pad_or_trunc(Vector{UInt8}(collect(tweak)), 8)
-    FF3{typeof(aes_key)}(aes_key, radix, tweak_bytes)
+    aes_key = get_block_cipher(key_size, reverse(key))
+    FF3{typeof(aes_key)}(aes_key, radix, Tuple(tweak))
 end
-FF3(; key_size=128, key, radix, tweak="") =
+FF3(; key_size=128, key, radix, tweak) =
     FF3(key_size, key, radix, tweak)
 
 function ff3_impl(ctx, input, is_encrypt)
