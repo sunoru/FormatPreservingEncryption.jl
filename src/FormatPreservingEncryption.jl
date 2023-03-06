@@ -5,6 +5,7 @@ using AESNI: bytes_to_uint128, IS_BIG_ENDIAN, ByteSequence
 
 export FF1, FF3
 export encrypt, decrypt
+export encrypt!, decrypt!
 export map_encrypt
 
 include("./common.jl")

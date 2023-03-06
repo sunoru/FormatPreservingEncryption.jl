@@ -16,7 +16,8 @@ end
 FF1(; key_size=128, key, radix, tweak="") =
     FF1(key_size, key, radix, tweak)
 
-function ff1_impl(ctx, input, is_encrypt)
+function ff1_impl!(ctx, output, input, is_encrypt)
+    @assert length(input) == length(output) "input and output must have the same length"
     # TODO: optimize it
     aes_key = ctx.aes_key
     tweak = ctx.tweak
@@ -29,22 +30,24 @@ function ff1_impl(ctx, input, is_encrypt)
     powru = BigInt(radix)^u
     powrv = BigInt(radix)^v
     # 2
-    out = UInt32.(input)
-    A = @view out[1:u]
-    B = @view out[u+1:end]
+    A = @view output[1:u]
+    B = @view output[u+1:end]
     # 3
     b = cld(ceil(UInt32, v * log2(radix)), 8)
     # 4
     d = UInt32(4) * cld(b, UInt32(4)) + UInt32(4)
 
     # 5
-    P = [
-        0x1, 0x2, 0x1,
-        be_bytes((radix << UInt32(8)) | UInt32(10))...,
-        u % UInt8,
-        be_bytes(n)...,
-        be_bytes(t)...
-    ]
+    P = Vector{UInt8}(undef, 16)
+    @inbounds begin
+        P[1] = 0x1
+        P[2] = 0x2
+        P[3] = 0x1
+        P[4:7] .= be_bytes(radix << UInt32(8) | UInt32(10))
+        P[8] = u % UInt8
+        P[9:12] .= be_bytes(n)
+        P[13:16] .= be_bytes(t)
+    end
 
     pad = (-t - b - UInt32(1)) % UInt32(16)
     Q = zeros(UInt8, t + pad + UInt32(1) + b)
@@ -90,9 +93,11 @@ function ff1_impl(ctx, input, is_encrypt)
         A, B = B, A
         str_in_base!(is_encrypt ? B : A, c, radix)
     end
-    out
+    output
 end
 
-AESNI.encrypt(ctx::FF1, plain::AbstractArray{<:Integer}) = ff1_impl(ctx, plain, true)
+AESNI.encrypt(ctx::FF1, plain::AbstractArray{<:Integer}) = encrypt!(ctx, UInt32.(plain), plain)
+encrypt!(ctx::FF1, cipher::AbstractArray{<:Integer}, plain::AbstractArray{<:Integer}) = ff1_impl!(ctx, cipher, plain, true)
 
-AESNI.decrypt(ctx::FF1, cipher::AbstractArray{<:Integer}) = ff1_impl(ctx, cipher, false)
+AESNI.decrypt(ctx::FF1, cipher::AbstractArray{<:Integer}) = decrypt!(ctx, UInt32.(cipher), cipher)
+decrypt!(ctx::FF1, plain::AbstractArray{<:Integer}, cipher::AbstractArray{<:Integer}) = ff1_impl!(ctx, plain, cipher, false)
