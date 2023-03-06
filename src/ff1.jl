@@ -48,10 +48,12 @@ function ff1_impl!(ctx, output, input, is_encrypt)
         P[9:12] .= be_bytes(n)
         P[13:16] .= be_bytes(t)
     end
+    P128 = bytes_to_uint128(P)
 
     pad = (-t - b - UInt32(1)) % UInt32(16)
     Q = zeros(UInt8, t + pad + UInt32(1) + b)
     S = zeros(UInt8, cld(d, 16) * 16)
+    B_bytes = zeros(UInt8, b)
     # 6
     for iter in UInt8(0):UInt8(9)
         i = is_encrypt ? iter : (UInt8(9) - iter)
@@ -60,12 +62,11 @@ function ff1_impl!(ctx, output, input, is_encrypt)
         Q[t+1:t+pad] .= 0x00
         Q[t+pad+1] = i
         B_num = num_in_base(is_encrypt ? B : A, radix)
-        B_bytes = be_bytes(B_num, b)
-        B_bytes_len = length(B_bytes)
+        B_bytes, B_bytes_len = be_bytes!(B_bytes, B_num)
         Q[t+pad+2:end-B_bytes_len] .= 0x00
-        Q[end-B_bytes_len+1:end] .= B_bytes
+        Q[end-B_bytes_len+1:end] .= @view B_bytes[1:B_bytes_len]
         # 6.ii
-        R = encrypt(aes_key, bytes_to_uint128(P))
+        R = encrypt(aes_key, P128)
         R = prf(aes_key, Q, R)
         # 6.iii
         S[1:16] .= le_bytes(R)

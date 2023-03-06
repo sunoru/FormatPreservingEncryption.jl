@@ -20,17 +20,17 @@ end
 str_in_base(x::BigInt, radix, len) = str_in_base!(Vector{UInt32}(undef, len), x, radix)
 
 # https://discourse.julialang.org/t/bigint-to-bytes/91107/5
-function to_bytes(x::BigInt, len=cld(Base.GMP.MPZ.sizeinbase(n, 2), 8); bigendian=true)
-    bytes = Vector{UInt8}(undef, len)
+function to_bytes!(bytes::Vector{UInt8}, x::BigInt; bigendian=true)
     order = Cint(bigendian ? 1 : -1)
     count = Ref{Csize_t}()
     @ccall "libgmp".__gmpz_export(bytes::Ptr{UInt8}, count::Ref{Csize_t}, order::Cint,
         1::Csize_t, 1::Cint, 0::Csize_t, x::Ref{BigInt})::Ptr{UInt8}
     @assert count[] ≤ length(bytes)
-    return resize!(bytes, count[])
+    bytes, count[]
 end
-# Big endian
-be_bytes(x::BigInt, len=cld(Base.GMP.MPZ.sizeinbase(n, 2), 8)) = to_bytes(x, len, bigendian=true)
+be_bytes!(bytes::Vector{UInt8}, x::BigInt) = to_bytes!(bytes, x, bigendian=true)
+le_bytes!(bytes::Vector{UInt8}, x::BigInt) = to_bytes!(bytes, x, bigendian=false)
+
 function be_bytes(x::Core.BuiltinInts)
     bytes = AESNI.unsafe_reinterpret_convert(UInt8, x, sizeof(x))
     @static if IS_BIG_ENDIAN
@@ -39,7 +39,6 @@ function be_bytes(x::Core.BuiltinInts)
         reverse(bytes)
     end
 end
-le_bytes(x::BigInt, len=cld(Base.GMP.MPZ.sizeinbase(n, 2), 8)) = to_bytes(x, len, bigendian=false)
 function le_bytes(x::Core.BuiltinInts)
     bytes = AESNI.unsafe_reinterpret_convert(UInt8, x, sizeof(x))
     @static if IS_BIG_ENDIAN

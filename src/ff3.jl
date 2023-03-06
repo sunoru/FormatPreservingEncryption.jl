@@ -33,6 +33,7 @@ function ff3_impl(ctx, input, is_encrypt)
     # 3
     T_L, T_R = tweak[1:4], tweak[5:8]
     # 4
+    B_bytes = zeros(UInt8, max(u, v))
     for iter in UInt8(0):UInt8(7)
         i = is_encrypt ? iter : (UInt8(7) - iter)
         # 4.i
@@ -43,10 +44,10 @@ function ff3_impl(ctx, input, is_encrypt)
         end
         # 4.ii
         B_num = num_in_base(is_encrypt ? B : A, radix, bigendian=false)
-        B_bytes = le_bytes(B_num, m)
+        B_bytes, B_bytes_len = le_bytes!(B_bytes, B_num)
         P_REVB = (
-            B_bytes...,
-            Iterators.repeated(UInt8(0), 12 - length(B_bytes))...,
+            B_bytes[1:B_bytes_len]...,
+            Iterators.repeated(UInt8(0), 12 - B_bytes_len)...,
             W[4] ⊻ i,
             W[3:-1:1]...,
         )
